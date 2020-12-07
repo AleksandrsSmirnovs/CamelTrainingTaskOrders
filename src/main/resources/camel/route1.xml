@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<route id="route1" xmlns="http://camel.apache.org/schema/spring">
+    <from uri="file:src/in?noop=true"/>
+    <log message="Processing file: ${header.CamelFileName}"/>
+    <split streaming="true">
+        <tokenize token="\n"/>
+        <filter>
+            <simple>${exchangeProperty.CamelSplitIndex} == 0</simple>
+            <stop/>
+        </filter>
+        <unmarshal>
+            <bindy type="Csv" classType="task.training.cameltraining.model.OrderCsvRecord"/>
+        </unmarshal>
+        <filter>
+            <simple>${body.getSalesChannel} startsWith 'Off'</simple>
+            <stop/>
+        </filter>
+        <log message="${body}"/>
+        <to uri="direct:baz"/>
+<!--        <to uri="direct:persistOrders"/>-->
+    </split>
+    <log message="Done processing file: ${header.CamelFileName}"/>
+</route>

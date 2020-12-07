@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<route id="route3" xmlns="http://camel.apache.org/schema/spring">
+    <from uri="direct:baz"/>
+    <bean ref="task.training.cameltraining.util.CsvRecordToOrder"/>
+    <wireTap uri="direct:foo"/>
+    <setHeader name="country">
+        <simple>${body.getCountry}</simple>
+    </setHeader>
+    <log message="Header is ${header.country}"/>
+    <aggregate strategyRef="countryAggregationStrategy" completionTimeout="99999">
+        <correlationExpression>
+            <header>country</header>
+        </correlationExpression>
+        <log message="Sending out ${body}"/>
+        <wireTap uri="direct:bar"/>
+        <setHeader name="region">
+            <simple>${body.getRegion}</simple>
+        </setHeader>
+        <aggregate strategyRef="regionAggregationStrategy" completionTimeout="99999">
+            <correlationExpression>
+                <header>region</header>
+            </correlationExpression>
+            <marshal>
+                <bindy type="Csv" classType="task.training.cameltraining.entity.Region"/>
+            </marshal>
+            <to uri="file:src/out/reports/?fileName=${header.region}_${date:now:dd_MM_yyyy}.csv"/>
+        </aggregate>
+    </aggregate>
+</route>
